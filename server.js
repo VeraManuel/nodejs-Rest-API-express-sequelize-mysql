@@ -40,7 +40,8 @@ app.listen(PORT, () => {
 db.sequelize.sync();
 
 
-/**in development stage use
+/**
+*in development stage use
 *db.sequelize.sync({ force: true }).then(() =>{
 *   console.log('Drop and re-sync db.');
 *});
