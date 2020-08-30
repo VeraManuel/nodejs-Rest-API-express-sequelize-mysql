@@ -4,6 +4,23 @@ var db = require('../models');
 var Tutorial = db.tutorials;
 var Op = db.Sequelize.Op;
 
+// Paginate
+
+var getPagination = (page, size) => {
+    var limit = size ? +size : 3;
+    var offset = page ? page * limit : 0;
+
+    return { limit, offset} ;
+};
+
+var getPagingData = (data, page, limit) => {
+    var { count: totalItems, rows: tutorials } = data;
+    var currentPage = page ? +page : 1;
+    var totalPages = Math.ceil(totalItems / limit);
+
+    return { totalItems, tutorials, totalPages, currentPage };
+};
+
 // create and save a new tutorial
 
 exports.create = (req, res) => {
@@ -39,12 +56,15 @@ exports.create = (req, res) => {
 // retrieve all tutorial from DB
 
 exports.findAll = (req, res) => {
-    var title = req.query.title;
+    var { page, size, title } = req.query;
     var condition = title ? { title: { [Op.like]: `%${title}%` } }: null;
 
-    Tutorial.findAll({ where: condition})
+    var { limit, offset } = getPagination(page, size);
+
+    Tutorial.findAndCountAll({ where: condition, limit, offset })
             .then(data => {
-                res.send(data);
+                var response = getPagingData(data, page, limit);
+                res.send(response);
             })
             .catch(err => {
                 res.status(500).send({
@@ -146,9 +166,14 @@ exports.deleteAll = (req, res) => {
 // Find all published tutorials
 
 exports.findAllPublished = (req, res) => {
-    Tutorial.findAll({ where: { published: true } })
+    var { page, size } = req.query;
+
+    var { limit, offset } = getPagination(page, size);
+
+    Tutorial.findAndCountAll({ where: { published: true }, limit, offset })
             .then(data =>{
-                res.send(data);
+                var response = getPagingData(data, page, limit);
+                res.send(response);
             })
             .catch(err => {
                 res.status(500).send({
